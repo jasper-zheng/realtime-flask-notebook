@@ -1,6 +1,6 @@
 $(document).ready(function() {
     
-    const FRAME_RATE = 100;
+    const FRAME_RATE = 200;
     const FRAME_SIZE = 500;
     const IMG_QUALITY= 0.75;
     let namespace = "/demo";
@@ -8,6 +8,9 @@ $(document).ready(function() {
     var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
     
     const canvas = document.querySelector("#inputCanvas");
+    const video = document.querySelector("#videoElement");
+    const prediction = document.querySelector("#prediction");
+
     canvas.width = FRAME_SIZE;
     canvas.height = FRAME_SIZE;
     let ctx = canvas.getContext('2d');
@@ -20,7 +23,7 @@ $(document).ready(function() {
         video: {width: FRAME_SIZE, height: FRAME_SIZE}
     };
     
-    let video = document.querySelector("#videoElement");
+    
     var localMediaStream = null;
     navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
         video.srcObject = stream;
@@ -31,7 +34,7 @@ $(document).ready(function() {
         }, FRAME_RATE);
     
         socket.on('packet_from_py',function(data){
-            // output_canvas.style.backgroundImage = `url(${data.image_data})`;
+            prediction.innerHTML = data.class_name
         });
         
     }).catch(function (err) {

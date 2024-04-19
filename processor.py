@@ -3,16 +3,30 @@ import threading
 from time import sleep
 from utils import base64_to_pil_image, pil_image_to_base64
 
+from torch.nn import Identity
+import torch
+from torchvision.transforms.v2 import Compose, ToImage, ToDtype, Resize, Grayscale, Normalize
+
+
 
 class Processor(object):
-    def __init__(self, model_backend, quality = 0.75):
+    def __init__(self, model_backend, device, colour_channels = 3, img_resolution = 64, quality = 0.75):
         self.quality = int(quality*100)
+        self.device = device
         self.to_process = []
         self.to_output = []
         self.model_backend = model_backend
-
-        self.client = udp_client.SimpleUDPClient(ip, port)
-        self.z = None
+        
+        self.transformation = Compose([   
+            # convert an image to tensor
+            ToImage(),
+            ToDtype(torch.float32, scale=True),
+            Resize(img_resolution),
+            # normalise pixel values to be between -1 and 1 
+            Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            Grayscale() if colour_channels == 1 else Identity()
+            
+        ])
 
         thread = threading.Thread(target=self.keep_processing, args=())
         thread.daemon = True
@@ -30,30 +44,25 @@ class Processor(object):
 
         ######## Calling the backend model ##########
         if input_img is not None:
-            self.z = self.model_backend(input_img)
-            output_str = self.z[0].tolist()
+            input_img = self.transformation(input_img).to(self.device).unsqueeze(0)
+            predictions = self.model_backend(input_img)
+            _, predicted_class_index = torch.max(predictions[0], 0)
+            output_str = predicted_class_index.tolist()
             self.to_output.append(output_str)
 
-        ######## Calling the backend model ##########
-
-        # output_str is a base64 string in ascii
-            # output_str = pil_image_to_base64(output_img, quality = self.quality)
-        # convert eh base64 string in ascii to base64 string in _bytes_
-            
 
     def keep_processing(self):
         while True:
             self.process_one()
             sleep(0.01)
 
-    def enqueue_input(self, input):
-        self.to_process.append(input)
+    def enqueue_input(self, img_from_js):
+        self.to_process.append(img_from_js)
 
     def get_frame(self):
         if (len(self.to_output) >= 2):
             self.to_output = []
         while not self.to_output:
-            # sleep(0.05)
             return 'not ready'
         return self.to_output.pop(0)
 
