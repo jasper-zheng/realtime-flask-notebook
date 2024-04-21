@@ -16,6 +16,7 @@ class Processor(object):
         self.to_process = []
         self.to_output = []
         self.model_backend = model_backend
+        self.class_names = None
         
         self.transformation = Compose([   
             # convert an image to tensor
@@ -48,7 +49,10 @@ class Processor(object):
             predictions = self.model_backend(input_img)
             _, predicted_class_index = torch.max(predictions[0], 0)
             output_str = predicted_class_index.tolist()
-            self.to_output.append(output_str)
+            if self.class_names is None:
+                self.to_output.append(output_str)
+            else:
+                self.to_output.append(self.class_names[output_str])
 
 
     def keep_processing(self):
@@ -66,3 +70,7 @@ class Processor(object):
             return 'not ready'
         return self.to_output.pop(0)
 
+    def set_class_name(self, class_names):
+        assert self.model_backend.num_classes == len(class_names), f"number of classes doesn't match expected num_classes:{self.model_backend.num_classes}"
+        
+        self.class_names = class_names

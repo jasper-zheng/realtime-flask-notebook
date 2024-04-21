@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webcam Model Demo</title>
+<style>
+    #videoElement {
+        width: 100%;
+        height: auto;
+        display: none;
+        visibility: hidden;
+    }
+</style>
+</head>
+<body>
+    <video id="videoElement" autoplay></video>
+    <canvas id="inputCanvas"></canvas>
+
+    <div>Predicted class index: <span id="prediction"></span></div>
+
+    
+    <script lang="text/javascript" src="{{ url_for('static', filename='js/jquery-3.2.1.slim.min.js') }}"></script>
+    <script lang="text/javascript" src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/webcam.js') }}"></script>
+</body>
+</html>
